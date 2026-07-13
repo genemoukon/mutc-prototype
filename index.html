@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trade #4821 — MuTC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ---- Hyperliquid-inspired tokens: teal-black, one mint accent, dense & sharp ---- */
+  :root {
+    --bg: #0f1a1f;            /* HL exact */
+    --card: #131f26;
+    --row: #182831;
+    --stroke: rgba(157,178,189,.10);
+    --stroke2: rgba(157,178,189,.20);
+    --t1: #f1f6f9;
+    --t2: #9db2bd;            /* HL exact */
+    --t3: #5d707c;
+    --mint: #50d2c1;          /* HL exact — brand + positive */
+    --mint-dim: rgba(80,210,193,.12);
+    --red: #ed7088;
+    --red-dim: rgba(237,112,136,.12);
+    --amber: #fbbf24;
+    --amber-dim: rgba(251,191,36,.10);
+    --font: "Inter", system-ui, -apple-system, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; }
+  body {
+    background: var(--bg); color: var(--t1);
+    font-family: var(--font); font-size: 12.5px; line-height: 1.45;
+    padding-bottom: 92px;
+  }
+  .num { font-feature-settings: "tnum"; }
+  a { color: var(--t2); text-decoration: none; }
+  a:hover { color: var(--mint); }
+
+  .app { max-width: 440px; margin: 0 auto; padding: 0 12px; }
+
+  /* ---- App bar ---- */
+  .bar { display: flex; align-items: center; gap: 8px; padding: 14px 2px 10px; }
+  .logo { font-weight: 700; font-size: 14.5px; letter-spacing: -.02em; }
+  .logo em { font-style: normal; color: var(--mint); }
+  .acct {
+    margin-left: auto; display: flex; align-items: center; gap: 6px;
+    font-size: 11.5px; font-weight: 500; color: var(--t2);
+    background: var(--row); border: 1px solid var(--stroke);
+    padding: 5px 10px; border-radius: 6px;
+  }
+  .acct::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--mint); }
+
+  /* ---- Trade context ---- */
+  .ctx { display: flex; align-items: center; gap: 8px; padding: 4px 2px 12px; }
+  .ctx .pair { font-size: 15.5px; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
+  .ctx .id { color: var(--t3); font-size: 11px; white-space: nowrap; }
+  .ctx .pill { margin-left: auto; white-space: nowrap; flex: none; }
+
+  /* ---- Status tags: tinted bg + colored text (HL convention) ---- */
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 5px;
+    background: var(--row); border: 1px solid var(--stroke); color: var(--t2);
+  }
+  .pill.green { background: var(--mint-dim); border-color: rgba(80,210,193,.3); color: var(--mint); }
+  .pill.red   { background: var(--red-dim);  border-color: rgba(237,112,136,.3); color: var(--red); }
+  .pill.amber { background: var(--amber-dim); border-color: rgba(251,191,36,.25); color: var(--amber); }
+  .pill .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .pill .dot.pulse { animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .3; } }
+
+  /* ---- Cards & rows: sharp, dense ---- */
+  .card {
+    background: var(--card); border: 1px solid var(--stroke);
+    border-radius: 10px; padding: 10px; margin-bottom: 10px;
+  }
+  .card .title {
+    font-size: 10.5px; font-weight: 600; color: var(--t3);
+    text-transform: uppercase; letter-spacing: .07em;
+    padding: 2px 4px 8px;
+  }
+  .rrow {
+    background: var(--row); border: 1px solid var(--stroke);
+    border-radius: 8px; padding: 10px; display: flex; align-items: center; gap: 10px;
+  }
+  .rrow + .rrow { margin-top: 6px; }
+
+  .coin { width: 28px; height: 28px; flex: none; }
+  .coin svg { width: 28px; height: 28px; display: block; }
+
+  .rrow .info { min-width: 0; }
+  .rrow .lbl { font-size: 10px; font-weight: 600; color: var(--t3); letter-spacing: .06em; }
+  .rrow .amt { font-size: 16.5px; font-weight: 700; letter-spacing: -.01em; margin-top: 1px; }
+  .rrow .amt .sym { font-size: 11px; font-weight: 600; color: var(--t2); margin-left: 3px; }
+  .rrow .sub { font-size: 10.5px; color: var(--t3); margin-top: 1px; }
+  .rrow .right { margin-left: auto; text-align: right; flex: none; }
+  .rrow .conf { font-size: 10px; color: var(--t3); margin-top: 4px; }
+
+  .connector { display: flex; justify-content: center; margin: -3px 0; position: relative; z-index: 1; }
+  .connector span {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: var(--card); border: 1px solid var(--stroke2);
+    display: flex; align-items: center; justify-content: center; color: var(--t2);
+  }
+
+  /* ---- Stats strip: label/value pairs, table-like (HL market bar) ---- */
+  .strip {
+    display: flex; gap: 0; margin-top: 8px;
+    background: var(--row); border: 1px solid var(--stroke); border-radius: 8px;
+    padding: 8px 0;
+  }
+  .strip .cell { flex: 1; padding: 0 10px; min-width: 0; }
+  .strip .cell + .cell { border-left: 1px solid var(--stroke); }
+  .strip .k { font-size: 9.5px; color: var(--t3); letter-spacing: .05em; white-space: nowrap; }
+  .strip .v { font-size: 12px; font-weight: 600; margin-top: 2px; white-space: nowrap; }
+
+  /* ---- Deadline ---- */
+  .dlrow { margin-top: 8px; padding: 10px; background: var(--row); border: 1px solid var(--stroke); border-radius: 8px; }
+  .dlrow .top { display: flex; align-items: baseline; }
+  .dlrow .lbl { font-size: 10px; font-weight: 600; color: var(--t3); letter-spacing: .06em; }
+  .dlrow .time { margin-left: auto; font-size: 15px; font-weight: 700; }
+  .dlrow .time.warn { color: var(--amber); }
+  .dlrow .time.over { color: var(--red); }
+  .dlbar { height: 3px; background: rgba(157,178,189,.12); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .dlbar > div { height: 100%; border-radius: 2px; background: var(--mint); opacity: .7; transition: width 1s linear; }
+  .dlbar > div.warn { background: var(--amber); }
+  .dlbar > div.over { background: var(--red); }
+
+  /* ---- Message ---- */
+  .msg { padding: 10px 4px 0; font-size: 12px; color: var(--t2); }
+  .msg em { font-style: normal; color: var(--t1); font-weight: 600; }
+  .msg em.good { color: var(--mint); }
+  .msg em.bad { color: var(--red); }
+
+  /* ---- Actions: flat mint primary, dark text (HL exact) ---- */
+  .actions { display: flex; gap: 8px; padding: 12px 0 2px; }
+  button {
+    font-family: var(--font); font-size: 12.5px; font-weight: 600;
+    padding: 10px 16px; border-radius: 8px; cursor: pointer; border: none;
+    transition: filter .12s, background .12s; flex: 1;
+  }
+  button.primary { background: var(--mint); color: #072723; }
+  button.primary:hover { filter: brightness(1.06); }
+  button.ghost {
+    background: transparent; color: var(--t2);
+    border: 1px solid var(--stroke2);
+  }
+  button.ghost:hover { color: var(--t1); border-color: rgba(157,178,189,.35); }
+  button:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
+
+  /* ---- Fees ---- */
+  #fees { margin-top: 8px; }
+  #fees .box { background: var(--row); border: 1px solid var(--stroke); border-radius: 8px; padding: 3px 0; }
+  .def { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 12px; }
+  .def dt { color: var(--t2); }
+  .def.total { font-weight: 700; border-top: 1px solid var(--stroke); }
+
+  /* ---- Counterparty ---- */
+  .peer { display: flex; align-items: center; gap: 10px; padding: 2px 4px; }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 8px; flex: none;
+    background: var(--row); border: 1px solid var(--stroke2);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 11px; color: var(--t2);
+  }
+  .peer .name { font-weight: 600; font-size: 13px; }
+  .peer .meta { font-size: 10.5px; color: var(--t3); }
+  .stats { display: flex; gap: 6px; margin-top: 8px; }
+  .stat { flex: 1; background: var(--row); border: 1px solid var(--stroke);
+    border-radius: 8px; padding: 8px 10px; }
+  .stat .v { font-size: 14px; font-weight: 700; }
+  .stat .v.good { color: var(--mint); }
+  .stat .k { font-size: 9.5px; color: var(--t3); margin-top: 1px; letter-spacing: .04em; }
+
+  /* ---- Activity ---- */
+  .tl { list-style: none; }
+  .tl li { display: flex; gap: 10px; padding: 7px 4px; font-size: 11.5px; color: var(--t2); align-items: baseline; }
+  .tl li + li { border-top: 1px solid var(--stroke); }
+  .tl .t { color: var(--t3); font-size: 10px; width: 34px; flex: none; }
+  .tl li:first-child { color: var(--t1); }
+  .tl a { font-size: 10.5px; border-bottom: 1px solid var(--stroke2); }
+
+  .fade { animation: fade .2s ease-out; }
+  @keyframes fade { from { opacity: 0; transform: translateY(2px); } }
+
+  /* ---- Dev switcher ---- */
+  .dev {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(15,26,31,.94); backdrop-filter: blur(10px);
+    border-top: 1px solid var(--stroke);
+    padding: 10px 14px; display: flex; gap: 10px; align-items: center; z-index: 10;
+    justify-content: center;
+  }
+  .dev .lbl { font-size: 9.5px; font-weight: 600; color: var(--t3); letter-spacing: .08em; }
+  .dev select {
+    background: var(--row); color: var(--t1); border: 1px solid var(--stroke2);
+    border-radius: 6px; padding: 6px 10px; font-size: 11.5px; font-family: var(--font);
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="page">
+  <div class="bar">
+    <span class="logo"><em>μ</em>TC</span>
+    <span class="acct num">you.eth</span>
+  </div>
+
+  <div class="ctx">
+    <span class="pair">BTC / USDT</span>
+    <span class="id num">#4821</span>
+    <span class="pill" id="pill"><span class="dot" id="pillDot"></span><span id="pillText">—</span></span>
+  </div>
+
+  <!-- Swap card -->
+  <div class="card">
+    <div class="rrow" id="rowMe">
+      <div class="coin">
+        <svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="14" fill="#f7931a"/><text x="14" y="19" font-size="14" font-weight="700" fill="#fff" text-anchor="middle" font-family="Inter, sans-serif">₿</text></svg>
+      </div>
+      <div class="info">
+        <div class="lbl">YOU SEND</div>
+        <div class="amt num">0.5200<span class="sym">BTC</span></div>
+        <div class="sub">Bitcoin · 2 conf</div>
+      </div>
+      <div class="right">
+        <span class="pill" id="meSt">—</span>
+        <div class="conf num" id="meConf"></div>
+      </div>
+    </div>
+
+    <div class="connector"><span>
+      <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4.5h9M8.5 2l2.5 2.5L8.5 7M12 9.5H3M5.5 12L3 9.5 5.5 7"/></svg>
+    </span></div>
+
+    <div class="rrow" id="rowPeer">
+      <div class="coin">
+        <svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="14" fill="#26a17b"/><text x="14" y="19" font-size="14" font-weight="700" fill="#fff" text-anchor="middle" font-family="Inter, sans-serif">₮</text></svg>
+      </div>
+      <div class="info">
+        <div class="lbl">YOU RECEIVE</div>
+        <div class="amt num">61,204.00<span class="sym">USDT</span></div>
+        <div class="sub">TRON · TRC20 · 19 conf</div>
+      </div>
+      <div class="right">
+        <span class="pill" id="peerSt">—</span>
+        <div class="conf num" id="peerConf"></div>
+      </div>
+    </div>
+
+    <div class="strip num">
+      <div class="cell"><div class="k">RATE</div><div class="v">117,700</div></div>
+      <div class="cell"><div class="k">VS MID</div><div class="v" style="color:var(--mint)">−0.21%</div></div>
+      <div class="cell"><div class="k">FEE</div><div class="v">0.40%</div></div>
+    </div>
+
+    <div class="dlrow" id="dlWrap">
+      <div class="top">
+        <span class="lbl">DEPOSIT DEADLINE</span>
+        <span class="time num" id="dlTime">—</span>
+      </div>
+      <div class="dlbar"><div id="dlFill"></div></div>
+    </div>
+
+    <p class="msg" id="msg"></p>
+
+    <dl id="fees" hidden>
+      <div class="box">
+        <div class="def"><dt>Gross</dt><dd class="num">61,204.00 USDT</dd></div>
+        <div class="def"><dt>Fee · 0.40%</dt><dd class="num">−244.82 USDT</dd></div>
+        <div class="def total"><dt>Received</dt><dd class="num">60,959.18 USDT</dd></div>
+      </div>
+    </dl>
+
+    <div class="actions" id="actions"></div>
+  </div>
+
+  <!-- Counterparty -->
+  <div class="card">
+    <div class="title">Counterparty</div>
+    <div class="peer">
+      <div class="avatar">TK</div>
+      <div>
+        <div class="name">TK-4821</div>
+        <div class="meta">since Nov 2025 · last trade 2d ago</div>
+      </div>
+      <span class="pill green" style="margin-left:auto">Gold</span>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="v num">142</div><div class="k">TRADES</div></div>
+      <div class="stat"><div class="v num good">0.7%</div><div class="k">NO-DEPOSIT</div></div>
+      <div class="stat"><div class="v num">38.2</div><div class="k">BTC VOLUME</div></div>
+    </div>
+  </div>
+
+  <!-- Activity -->
+  <div class="card">
+    <div class="title">Activity</div>
+    <ul class="tl" id="tl"></ul>
+  </div>
+</div>
+
+<div class="dev">
+  <span class="lbl">STATE</span>
+  <select id="sel"></select>
+</div>
+
+<script>
+const H = 3600e3, M = 60e3, now = Date.now();
+
+const lane = {
+  none:  ['', 'Not deposited', null],
+  conf:  (n,m)=>['amber pulse', 'Confirming', `${n}/${m} conf`],
+  locked:['green', 'Locked', null],
+  refund:['', 'Refunded', null],
+  swap:  ['green', 'Swapped', null],
+};
+
+const EV = {
+  created:  ['14:02','Trade agreed via negotiation — escrow created', null],
+  meSent:   ['14:10','You sent 0.5200 BTC', 'f4a1…9c2e'],
+  meLock:   ['14:31','Your deposit locked · 2 confirmations', 'f4a1…9c2e'],
+  peerSent: ['14:40','TK-4821 sent 61,204.00 USDT', 'b7d3…441a'],
+  peerLock: ['14:41','Counterparty deposit locked · 19 confirmations', 'b7d3…441a'],
+  swap:     ['14:42','Swap executed · fee 244.82 USDT withheld', '0x9e…77f0'],
+  cxlPeer:  ['15:05','TK-4821 proposed cancellation', null],
+  timeout:  ['20:02','Deadline exceeded — funds claimable', null],
+  claim:    ['20:15','claimTimeout executed · 0.5200 BTC returned', 'c1e8…03bd'],
+};
+
+const S = {
+  awaiting_both: {
+    pill: ['', '', 'Awaiting deposits'],
+    me: lane.none, peer: lane.none,
+    dl: now + 5.6*H, total: 6*H,
+    msg: `No funds are at risk yet. Either side can walk away — <em>cancellation is penalty-free until a deposit is made.</em>`,
+    act: [['primary','Deposit 0.5200 BTC'],['ghost','Cancel trade']],
+    tl: ['created'],
+  },
+  me_funding: {
+    pill: ['amber', 'pulse', 'Confirming deposit'],
+    me: lane.conf(1,2), peer: lane.none,
+    dl: now + 5.2*H, total: 6*H,
+    msg: `Your transaction is confirming — 1 of 2. Funds lock into escrow once confirmed.`,
+    act: [['ghost','View transaction']],
+    tl: ['created','meSent'],
+  },
+  me_funded_waiting: {
+    pill: ['amber', '', 'Awaiting counterparty'],
+    me: lane.locked, peer: lane.none,
+    dl: now + 4.5*H, total: 6*H,
+    msg: `Your 0.5200 BTC is locked in escrow. If TK-4821 fails to deposit by the deadline, <em class="good">you reclaim it in full — unconditionally.</em>`,
+    act: [['ghost','Propose mutual cancellation']],
+    tl: ['created','meSent','meLock'],
+  },
+  counterparty_funded: {
+    pill: ['red', '', 'Deposit required'],
+    me: lane.none, peer: lane.locked,
+    dl: now + 1.2*H, total: 6*H,
+    msg: `TK-4821 has already deposited. Missing the deadline records a <em class="bad">no-deposit strike</em> — 0 of 3 before trading is suspended.`,
+    act: [['primary','Deposit 0.5200 BTC']],
+    tl: ['created','peerSent','peerLock'],
+  },
+  both_funding: {
+    pill: ['amber', 'pulse', 'Final confirmation'],
+    me: lane.locked, peer: lane.conf(15,19),
+    dl: now + 3.1*H, total: 6*H,
+    msg: `Counterparty deposit confirming — 15 of 19. The swap executes automatically once both sides are locked.`,
+    act: [],
+    tl: ['created','meSent','meLock','peerSent'],
+  },
+  swap_executing: {
+    pill: ['green', 'pulse', 'Executing swap'],
+    me: lane.locked, peer: lane.locked,
+    dl: null,
+    msg: `Both deposits confirmed. Executing on-chain — <em>cancellation is no longer possible.</em>`,
+    act: [],
+    tl: ['created','meSent','meLock','peerSent','peerLock'],
+  },
+  fulfilled: {
+    pill: ['green', '', 'Complete'],
+    me: lane.swap, peer: lane.swap,
+    dl: null, fees: true,
+    msg: `You received <em class="good">60,959.18 USDT</em> on TRC20. This trade was added to your track record.`,
+    act: [['ghost','View receipt'],['primary','New trade']],
+    tl: ['created','meSent','meLock','peerSent','peerLock','swap'],
+  },
+  timeout_claimable: {
+    pill: ['red', '', 'Deadline exceeded'],
+    me: lane.locked, peer: lane.none,
+    dl: now - 15*M, total: 6*H,
+    msg: `TK-4821 failed to deposit in time. Your 0.5200 BTC is <em class="good">claimable in full, no conditions.</em> A no-deposit strike was recorded against them.`,
+    act: [['primary','Claim 0.5200 BTC']],
+    tl: ['created','meSent','meLock','timeout'],
+  },
+  timeout_claiming: {
+    pill: ['amber', 'pulse', 'Claiming'],
+    me: lane.conf(1,2), peer: lane.none,
+    dl: null,
+    msg: `Your claim transaction is confirming — 1 of 2.`,
+    act: [['ghost','View transaction']],
+    tl: ['created','meSent','meLock','timeout','claim'],
+  },
+  timeout_penalized: {
+    pill: ['red', '', 'Failed'],
+    me: lane.none, peer: lane.refund,
+    dl: null,
+    msg: `You didn't deposit before the deadline. A <em class="bad">no-deposit strike</em> was recorded — 1 of 3 before trading is suspended.`,
+    act: [['ghost','View history']],
+    tl: ['created','peerSent','peerLock','timeout'],
+  },
+  cancel_proposed_by_peer: {
+    pill: ['amber', '', 'Cancellation proposed'],
+    me: lane.locked, peer: lane.none,
+    dl: now + 2.8*H, total: 6*H,
+    msg: `TK-4821 proposed cancelling. <em>You're under no obligation to accept</em> — wait past the deadline and you reclaim your deposit in full.`,
+    act: [['ghost','Accept cancellation'],['primary','Decline and wait']],
+    tl: ['created','meSent','meLock','cxlPeer'],
+  },
+  cancelled_mutual: {
+    pill: ['', '', 'Cancelled'],
+    me: lane.refund, peer: lane.refund,
+    dl: null,
+    msg: `Both parties agreed to cancel. No impact on either track record.`,
+    act: [['ghost','View refund']],
+    tl: ['created','meSent','meLock','cxlPeer'],
+  },
+};
+
+const $ = id => document.getElementById(id);
+let dlAt = null, dlTotal = null;
+
+function renderSide(prefix, l) {
+  const [cls, text, conf] = l;
+  const st = $(prefix + 'St');
+  st.className = 'pill ' + cls.replace(' pulse','');
+  st.innerHTML = (cls.includes('pulse') ? '<span class="dot pulse"></span>' : '') + text;
+  $(prefix + 'Conf').textContent = conf || '';
+}
+
+function fmt(ms) {
+  const over = ms < 0; ms = Math.abs(ms);
+  const h = Math.floor(ms/H), m = Math.floor(ms%H/M), s = Math.floor(ms%M/1e3);
+  const p = n => String(n).padStart(2,'0');
+  const str = h ? `${h}:${p(m)}:${p(s)}` : `${m}:${p(s)}`;
+  return over ? `+${str}` : str;
+}
+
+function tick() {
+  if (dlAt == null) return;
+  const rem = dlAt - Date.now(), ratio = Math.max(0, Math.min(1, rem / dlTotal));
+  const t = $('dlTime'), f = $('dlFill');
+  t.textContent = fmt(rem);
+  t.className = 'time num' + (rem < 0 ? ' over' : ratio < .25 ? ' warn' : '');
+  f.style.width = (ratio * 100) + '%';
+  f.className = rem < 0 ? 'over' : ratio < .25 ? 'warn' : '';
+}
+setInterval(tick, 1000);
+
+function render(key) {
+  const s = S[key];
+  $('pill').className = 'pill ' + s.pill[0];
+  $('pillDot').className = 'dot ' + s.pill[1];
+  $('pillText').textContent = s.pill[2];
+
+  renderSide('me', s.me);
+  renderSide('peer', s.peer);
+
+  if (s.dl != null) {
+    $('dlWrap').hidden = false;
+    dlAt = s.dl; dlTotal = s.total;
+    tick();
+  } else { $('dlWrap').hidden = true; dlAt = null; }
+
+  $('msg').innerHTML = s.msg;
+  const a = $('actions');
+  a.innerHTML = '';
+  for (const [cls, txt] of s.act) {
+    const b = document.createElement('button');
+    b.className = cls; b.textContent = txt;
+    a.appendChild(b);
+  }
+  a.hidden = !s.act.length;
+  $('fees').hidden = !s.fees;
+
+  const tl = $('tl');
+  tl.innerHTML = '';
+  [...s.tl].reverse().forEach(k => {
+    const [t, text, tx] = EV[k];
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="t num">${t}</span><span>${text}` +
+      (tx ? ` <a href="#" class="num">${tx}</a>` : '') + `</span>`;
+    tl.appendChild(li);
+  });
+
+  const page = $('page');
+  page.classList.remove('fade'); void page.offsetWidth; page.classList.add('fade');
+}
+
+const sel = $('sel');
+for (const k of Object.keys(S)) {
+  const o = document.createElement('option');
+  o.value = k; o.textContent = `${k} — ${S[k].pill[2]}`;
+  sel.appendChild(o);
+}
+sel.onchange = () => render(sel.value);
+render('me_funded_waiting');
+sel.value = 'me_funded_waiting';
+</script>
+</body>
+</html>
