@@ -577,8 +577,11 @@ for (const k of Object.keys(S)) {
   sel.appendChild(o);
 }
 sel.onchange = () => render(sel.value, false);
-render('awaiting_both', false);
-sel.value = 'awaiting_both';
+/* deep-link: trade-detail.html?state=fulfilled */
+const initial = new URLSearchParams(location.search).get('state');
+const start = S[initial] ? initial : 'awaiting_both';
+render(start, false);
+sel.value = start;
 </script>
 </body>
 </html>
