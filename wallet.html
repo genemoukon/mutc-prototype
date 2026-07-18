@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create wallet — MuTC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1a1f; --card: #131f26; --row: #182831;
+    --stroke: rgba(157,178,189,.10); --stroke2: rgba(157,178,189,.20);
+    --t1: #f1f6f9; --t2: #9db2bd; --t3: #5d707c;
+    --mint: #50d2c1; --mint-dim: rgba(80,210,193,.12);
+    --amber: #fbbf24;
+    --font: "Inter", system-ui, -apple-system, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; }
+  body { background: var(--bg); color: var(--t1); font-family: var(--font); font-size: 13px; line-height: 1.5; }
+  .num { font-feature-settings: "tnum"; }
+  a { color: inherit; text-decoration: none; }
+
+  .app { max-width: 520px; margin: 0 auto; padding: 0 14px 60px; }
+
+  .bar { display: flex; align-items: center; gap: 8px; padding: 16px 2px 24px; }
+  .logo { font-weight: 700; font-size: 19px; letter-spacing: -.03em; }
+  .logo em { font-style: normal; color: var(--mint); }
+  .bar .step-ind { margin-left: auto; font-size: 11px; color: var(--t3); }
+
+  /* progress dots */
+  .dots { display: flex; gap: 6px; margin-bottom: 18px; }
+  .dots span { height: 3px; flex: 1; border-radius: 2px; background: var(--row); }
+  .dots span.on { background: var(--mint); }
+
+  h1 { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+  .sub { color: var(--t2); margin-top: 6px; font-size: 13px; }
+  .sub em { font-style: normal; color: var(--mint); font-weight: 500; }
+
+  .panel { margin-top: 20px; }
+
+  /* option cards */
+  .opt {
+    display: flex; gap: 12px; align-items: center;
+    background: var(--card); border: 1px solid var(--stroke); border-radius: 10px;
+    padding: 16px; cursor: pointer; transition: border-color .12s;
+  }
+  .opt + .opt { margin-top: 10px; }
+  .opt:hover { border-color: rgba(80,210,193,.4); }
+  .opt .ic {
+    width: 36px; height: 36px; border-radius: 8px; flex: none;
+    background: var(--mint-dim); border: 1px solid rgba(80,210,193,.25);
+    display: flex; align-items: center; justify-content: center; color: var(--mint);
+  }
+  .opt h3 { font-size: 14px; font-weight: 600; }
+  .opt p { font-size: 12px; color: var(--t2); margin-top: 2px; }
+  .opt .arr { margin-left: auto; color: var(--t3); }
+
+  /* seed grid */
+  .seedbox { position: relative; margin-top: 4px; }
+  .seed {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    background: var(--card); border: 1px solid var(--stroke); border-radius: 10px; padding: 14px;
+  }
+  .word {
+    background: var(--row); border: 1px solid var(--stroke); border-radius: 7px;
+    padding: 8px 10px; font-size: 12.5px; font-weight: 500; display: flex; gap: 7px;
+  }
+  .word i { font-style: normal; color: var(--t3); font-size: 11px; width: 14px; text-align: right; }
+  .veil {
+    position: absolute; inset: 0; border-radius: 10px;
+    backdrop-filter: blur(9px); background: rgba(15,26,31,.55);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  }
+  .veil p { color: var(--t2); font-size: 12.5px; }
+
+  .warn {
+    margin-top: 12px; padding: 11px 13px; border-radius: 8px;
+    background: var(--row); border: 1px solid var(--stroke);
+    font-size: 12px; color: var(--t2);
+  }
+  .warn em { font-style: normal; color: var(--amber); font-weight: 600; }
+
+  .check { display: flex; gap: 9px; align-items: flex-start; margin-top: 14px; cursor: pointer; }
+  .check input { margin-top: 2px; accent-color: var(--mint); }
+  .check span { font-size: 12.5px; color: var(--t2); }
+
+  /* recovery toggle */
+  .rec {
+    background: var(--card); border: 1px solid var(--stroke); border-radius: 10px; padding: 16px;
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .rec .tgl { margin-left: auto; flex: none; }
+  .switch { position: relative; width: 40px; height: 22px; display: inline-block; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; inset: 0; border-radius: 99px; background: var(--row);
+    border: 1px solid var(--stroke2); transition: background .15s; cursor: pointer;
+  }
+  .slider::before {
+    content: ""; position: absolute; width: 16px; height: 16px; border-radius: 50%;
+    left: 2px; top: 2px; background: var(--t2); transition: transform .15s, background .15s;
+  }
+  .switch input:checked + .slider { background: rgba(80,210,193,.35); border-color: rgba(80,210,193,.4); }
+  .switch input:checked + .slider::before { transform: translateX(18px); background: var(--mint); }
+  .rec h3 { font-size: 14px; font-weight: 600; }
+  .rec p { font-size: 12px; color: var(--t2); margin-top: 4px; }
+  .recnote { margin-top: 12px; font-size: 12px; color: var(--t3); padding: 0 4px; }
+  .recnote.off { color: var(--amber); }
+
+  /* addresses */
+  .addr {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--card); border: 1px solid var(--stroke); border-radius: 10px; padding: 12px 14px;
+  }
+  .addr + .addr { margin-top: 8px; }
+  .addr .coin { width: 26px; height: 26px; flex: none; }
+  .addr .coin svg { width: 26px; height: 26px; display: block; }
+  .addr .name { font-weight: 600; font-size: 13px; width: 52px; }
+  .addr .hash { font-size: 11.5px; color: var(--t2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .addr .copy {
+    margin-left: auto; flex: none; font-size: 11px; color: var(--t3); cursor: pointer;
+    border: 1px solid var(--stroke2); border-radius: 6px; padding: 3px 9px;
+  }
+  .addr .copy:hover { color: var(--t1); }
+
+  .done-badge {
+    display: inline-flex; align-items: center; gap: 6px; margin-bottom: 14px;
+    font-size: 11.5px; font-weight: 600; color: var(--mint);
+    background: var(--mint-dim); border: 1px solid rgba(80,210,193,.3);
+    padding: 4px 10px; border-radius: 5px;
+  }
+
+  /* actions */
+  .actions { display: flex; gap: 8px; margin-top: 20px; }
+  button {
+    font-family: var(--font); font-size: 13px; font-weight: 600;
+    padding: 11px 18px; border-radius: 8px; cursor: pointer; border: none;
+    transition: filter .12s, opacity .12s; flex: 1;
+  }
+  button.primary { background: var(--mint); color: #072723; }
+  button.primary:hover { filter: brightness(1.06); }
+  button.primary:disabled { opacity: .35; cursor: default; filter: none; }
+  button.ghost { background: transparent; color: var(--t2); border: 1px solid var(--stroke2); }
+  button.ghost:hover { color: var(--t1); }
+  button:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
+
+  textarea {
+    width: 100%; min-height: 88px; resize: vertical;
+    background: var(--card); border: 1px solid var(--stroke); border-radius: 10px;
+    color: var(--t1); font-family: var(--font); font-size: 13px; padding: 12px;
+  }
+  textarea:focus { outline: none; border-color: rgba(80,210,193,.4); }
+
+  .fade { animation: fade .2s ease-out; }
+  @keyframes fade { from { opacity: 0; transform: translateY(2px); } }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="bar">
+    <a class="logo" href="index.html"><em>Mu</em>TC</a>
+    <span class="step-ind num" id="stepInd"></span>
+  </div>
+
+  <div class="dots" id="dots"><span></span><span></span><span></span></div>
+
+  <div id="content" class="fade"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const content = $('content');
+
+const WORDS = ['ripple','canyon','lumber','orbit','velvet','crater',
+               'signal','harbor','meadow','pulse','anchor','ember'];
+
+const COINS = {
+  btc: '<svg viewBox="0 0 26 26"><circle cx="13" cy="13" r="13" fill="#f7931a"/><text x="13" y="17.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle" font-family="Inter">₿</text></svg>',
+  eth: '<svg viewBox="0 0 26 26"><circle cx="13" cy="13" r="13" fill="#627eea"/><text x="13" y="17.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle" font-family="Inter">Ξ</text></svg>',
+  trx: '<svg viewBox="0 0 26 26"><circle cx="13" cy="13" r="13" fill="#eb0029"/><text x="13" y="17" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" font-family="Inter">T</text></svg>',
+  sol: '<svg viewBox="0 0 26 26"><circle cx="13" cy="13" r="13" fill="#9945ff"/><text x="13" y="17" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" font-family="Inter">S</text></svg>',
+};
+
+function setStep(n, total) {
+  $('stepInd').textContent = total ? `Step ${n} of ${total}` : '';
+  const dots = $('dots').children;
+  for (let i = 0; i < dots.length; i++) dots[i].className = i < n ? 'on' : '';
+}
+
+function show(html) {
+  content.innerHTML = html;
+  content.classList.remove('fade'); void content.offsetWidth; content.classList.add('fade');
+}
+
+/* ---- Step 0: choose ---- */
+function stepChoose() {
+  setStep(1, 3);
+  show(`
+    <h1>Set up your wallet</h1>
+    <p class="sub"><em>Non-custodial.</em> Your keys are generated and stored on this device — MuTC never holds your funds.</p>
+    <div class="panel">
+      <div class="opt" onclick="stepSeed()">
+        <div class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M8 10l-3-3M8 10l3-3"/><path d="M3 13h10"/></svg></div>
+        <div><h3>Create a new wallet</h3><p>Generate a fresh 12-word recovery phrase.</p></div>
+        <span class="arr">›</span>
+      </div>
+      <div class="opt" onclick="stepImport()">
+        <div class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="5" width="11" height="8.5" rx="1.5"/><path d="M5.5 5V3.5a2.5 2.5 0 015 0V5"/></svg></div>
+        <div><h3>Import an existing wallet</h3><p>Restore from a 12 or 24-word phrase. Treated identically after import.</p></div>
+        <span class="arr">›</span>
+      </div>
+    </div>
+  `);
+}
+
+/* ---- Step 1a: seed ---- */
+function stepSeed() {
+  setStep(2, 3);
+  const words = WORDS.map((w, i) => `<span class="word"><i class="num">${i+1}</i>${w}</span>`).join('');
+  show(`
+    <h1>Your recovery phrase</h1>
+    <p class="sub">These 12 words are the master key to your funds. Write them down, in order, offline.</p>
+    <div class="panel">
+      <div class="seedbox">
+        <div class="seed">${words}</div>
+        <div class="veil" id="veil">
+          <p>Make sure no one is watching your screen.</p>
+          <button class="ghost" style="flex:none;padding:8px 16px" onclick="$('veil').remove()">Reveal phrase</button>
+        </div>
+      </div>
+      <div class="warn"><em>Never share these words.</em> Anyone with this phrase can move your funds. MuTC staff will never ask for it.</div>
+      <label class="check"><input type="checkbox" id="ok" onchange="$('next').disabled=!this.checked">
+        <span>I wrote down my recovery phrase and stored it somewhere safe.</span></label>
+    </div>
+    <div class="actions">
+      <button class="ghost" onclick="stepChoose()">Back</button>
+      <button class="primary" id="next" disabled onclick="stepRecovery()">Continue</button>
+    </div>
+  `);
+}
+
+/* ---- Step 1b: import ---- */
+function stepImport() {
+  setStep(2, 3);
+  show(`
+    <h1>Import your wallet</h1>
+    <p class="sub">Paste your 12 or 24-word recovery phrase. It never leaves this device unencrypted.</p>
+    <div class="panel">
+      <textarea id="phrase" placeholder="word1 word2 word3 …" oninput="$('next').disabled=this.value.trim().split(/\\s+/).length<12"></textarea>
+    </div>
+    <div class="actions">
+      <button class="ghost" onclick="stepChoose()">Back</button>
+      <button class="primary" id="next" disabled onclick="stepRecovery()">Continue</button>
+    </div>
+  `);
+}
+
+/* ---- Step 2: recovery backup ---- */
+function stepRecovery() {
+  setStep(3, 3);
+  show(`
+    <h1>Recovery backup</h1>
+    <p class="sub">Optional protection against losing this device. Your wallet stays non-custodial either way.</p>
+    <div class="panel">
+      <div class="rec">
+        <div>
+          <h3>Encrypted recovery backup</h3>
+          <p>An encrypted backup, unreadable without your device passcode, is held in HSM cold storage
+          purely to restore access if you lose your device. Access is logged and audited.</p>
+        </div>
+        <label class="switch tgl"><input type="checkbox" id="rc" checked onchange="recNote()"><span class="slider"></span></label>
+      </div>
+      <p class="recnote" id="rcNote">Recommended. You can revoke the backup at any time in settings.</p>
+    </div>
+    <div class="actions">
+      <button class="ghost" onclick="stepChoose()">Back</button>
+      <button class="primary" onclick="stepDone()">Create wallet</button>
+    </div>
+  `);
+}
+function recNote() {
+  const on = $('rc').checked, n = $('rcNote');
+  n.textContent = on
+    ? 'Recommended. You can revoke the backup at any time in settings.'
+    : 'If you lose this device and your phrase, your funds are unrecoverable. No exceptions.';
+  n.className = 'recnote' + (on ? '' : ' off');
+}
+
+/* ---- Step 3: done ---- */
+function stepDone() {
+  setStep(3, 3);
+  show(`
+    <span class="done-badge">● Wallet ready</span>
+    <h1>Your deposit addresses</h1>
+    <p class="sub">Deposit to any of these to start trading. Withdrawals are signed with <em>your</em> key.</p>
+    <div class="panel">
+      <div class="addr"><span class="coin">${COINS.btc}</span><span class="name">BTC</span>
+        <span class="hash num">bc1qxk…v84w2h</span><span class="copy">Copy</span></div>
+      <div class="addr"><span class="coin">${COINS.eth}</span><span class="name">ETH</span>
+        <span class="hash num">0x7f3A…9cE1</span><span class="copy">Copy</span></div>
+      <div class="addr"><span class="coin">${COINS.trx}</span><span class="name">TRON</span>
+        <span class="hash num">TXk4…mJ9d</span><span class="copy">Copy</span></div>
+      <div class="addr"><span class="coin">${COINS.sol}</span><span class="name">SOL</span>
+        <span class="hash num">6yKp…Dq2f</span><span class="copy">Copy</span></div>
+    </div>
+    <div class="actions">
+      <button class="primary" onclick="location.href='trade-detail.html'">Start trading</button>
+    </div>
+  `);
+}
+
+/* deep-link: wallet.html?step=seed|recovery|done */
+const s = new URLSearchParams(location.search).get('step');
+({ seed: stepSeed, import: stepImport, recovery: stepRecovery, done: stepDone }[s] || stepChoose)();
+</script>
+</body>
+</html>
